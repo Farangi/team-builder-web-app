@@ -1,0 +1,51 @@
+version: "3"
+services:
+
+  frontend:
+    container_name: frontend
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+    depends_on:
+      - backend
+
+  postgres:
+    container_name: postgres
+    image: postgres:11.13-alpine
+    restart: always
+    working_dir: /app
+    expose:
+      - 5432
+    ports:
+      - "5432:5432"
+    volumes:
+      - .:/app
+    environment:
+      POSTGRES_DB: team_builder
+      POSTGRES_USER: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_PASSWORD: pg_test
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    container_name: backend
+    build: ./backend
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_DB: team_builder
+      POSTGRES_USER: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_PASSWORD: pg_test
+      POSTGRES_HOST: postgres
+    volumes:
+      - ./backend:/app
